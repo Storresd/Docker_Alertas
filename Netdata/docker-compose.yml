@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  web:
+    image: nginx
+    container_name: nginx_docker
+    restart: always
+    networks:
+      - npm
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm_server
+    restart: unless-stopped
+    ports:
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+    environment:
+      DB_SQLITE_FILE: "/data/database.sqlite"
+      DISABLE_IPV6: 'true'
+    networks:
+      - npm
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+  netdata:
+    image: netdata/netdata
+    container_name: netdata
+    restart: unless-stopped
+    hostname: salvadminasir.online
+    ports:
+      - 19999:19999
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf
+      - ./netdata/health.d:/etc/netdata/health.d
+
+
+networks:
+  npm:
+    name: npm
+    driver: bridge
+

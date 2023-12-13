@@ -1,0 +1,48 @@
+version: '3'
+services:
+  influxdb:
+    image: influxdb:1.8
+    volumes:
+      - influxdb:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=telegraf
+      - INFLUXDB_ADMIN_USER=frodo
+      - INFLUXDB_ADMIN_PASSWORD=bolson
+    ports:
+      - '8086:8086'
+  telegraf:
+    image: telegraf:1.15
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+  chronograf:
+    image: chronograf:1.8
+    ports:
+      - '8888:8888'
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=frodo
+      - INFLUXDB_PASSWORD=bolson
+  kapacitor:
+    image: kapacitor:1.5
+    environment:
+#      - KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086
+      - KAPACITOR_TELEGRAM_ENABLED=true
+      - KAPACITOR_TELEGRAM_TOKEN=6917926805:AAGpC1efPyPVD5KIGfwwE3IhrtKwYLr8uDY
+      - KAPACITOR_TELEGRAM_CHAT_ID=-4070449698
+#http://kapacitor:9092
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+volumes:
+  influxdb:
+
